@@ -2,7 +2,7 @@
 title: "Homework Assignment - Week 1"
 author: "Alison Lawyer"
 output: pdf_document
-date: "2024-09-10"
+date: "2024-09-12"
 ---
 
 ```{r setup, include=FALSE}
@@ -75,16 +75,14 @@ head(penguins)
 #    - The average body mass (`body_mass_g`) for each species.
 #    - The maximum flipper length (`flipper_length_mm`) for each species.
 #    Print the grouped dataframe
-penguins_grouped <- penguins %>% group_by(species)
-average_body_mass_by_species <- penguins_grouped %>% summarise(avg = mean(body_mass_g))
-max_flipper_length_by_species <- penguins_grouped %>% summarise(max = max(flipper_length_mm))
+penguins_grouped <- penguins %>% 
+  group_by(species) %>% 
+  summarise(avg_body_mass = mean(body_mass_g), max_flipper_length = max(flipper_length_mm))
 head(penguins_grouped)
-head(average_body_mass_by_species)
-head(max_flipper_length_by_species)
 
 
 # 2. **Interpret the results**. Which species has the highest average body mass? Which species has the longest maximum flipper length?
-
+# The Chinstrap species has values for the average and max, while the other two species show "NA".
 
 
 # Part D: Reshaping Data
