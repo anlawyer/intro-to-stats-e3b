@@ -1,0 +1,125 @@
+---
+title: "Homework Assignment - Week 1"
+author: "Alison Lawyer"
+output: pdf_document
+date: "2024-09-10"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 90), tidy = TRUE)
+```
+
+
+
+```{r}
+
+# Homework Objectives
+# In this homework, you will:
+# - Import a dataset related to ecology and perform basic exploration.
+# - Manipulate the data using `tidyverse` functions.
+# - Reshape data and create new variables.
+# - Group and summarize data to gain ecological insights.
+# 
+# We will use the `palmerpenguins` dataset for this assignment, which contains data about three species of penguins in the Palmer Archipelago, Antarctica.
+
+# Install/load and load the required packages
+# Remember, if you have previously installed a package (like tidyverse) you do not need to install it again, just load it
+library(tidyverse)
+install.packages("palmerpenguins")
+library(palmerpenguins)
+
+# Part A: Import and Explore the Dataset
+# 1. Load the penguins dataset
+data("penguins")
+
+# 2. **Inspect the first few rows of the dataset**. What variables are included in the dataset?
+head(penguins)
+# Variables include: species, island, bill length and depth, flipper length, body mass, sex and year
+
+# 3. **Check the dimensions of the dataset.** How many rows and columns are there?
+dim(penguins)
+# There are 8 columns and 344 rows
+
+# 4. **Get summary statistics** for each variable in the dataset.
+summary(penguins)
+
+
+
+
+# Part B: Basic Data Manipulation
+# 1. **Select specific columns**. 
+#    Create a new dataset with only the following columns: `species`, `bill_length_mm`, `flipper_length_mm`, and `body_mass_g`. 
+#    Print the first rows of this dataset using the head() function. 
+penguins_selected <- penguins %>% select(species, bill_length_mm, flipper_length_mm, body_mass_g)
+head(penguins_selected)
+
+
+# 2. **Filter the dataset** to only include penguins with a `body_mass_g` greater than 4000 grams. Print the first rows.
+penguins_filtered <- penguins %>% filter(body_mass_g > 4000)
+head(penguins_filtered)
+
+
+# 3. **Arrange the dataset** by `bill_length_mm` in ascending order. Print the first rows. 
+penguins_arranged <- penguins %>% arrange(bill_length_mm)
+head(penguins_arranged)
+
+# 4. **Create a new variable** that calculates the ratio of bill length (`bill_length_mm`) to flipper length (`flipper_length_mm`). 
+#   Call the new variable `bill_flipper_ratio`. Print the first rows. 
+penguins <- penguins %>% mutate(bill_flipper_ratio = bill_length_mm / flipper_length_mm)
+head(penguins)
+
+
+# Part C: Grouping and Summarizing Data
+# 1. **Group the data by penguin species (`species`)** and calculate the following summaries:
+#    - The average body mass (`body_mass_g`) for each species.
+#    - The maximum flipper length (`flipper_length_mm`) for each species.
+#    Print the grouped dataframe
+penguins_grouped <- penguins %>% group_by(species)
+average_body_mass_by_species <- penguins_grouped %>% summarise(avg = mean(body_mass_g))
+max_flipper_length_by_species <- penguins_grouped %>% summarise(max = max(flipper_length_mm))
+head(penguins_grouped)
+head(average_body_mass_by_species)
+head(max_flipper_length_by_species)
+
+
+# 2. **Interpret the results**. Which species has the highest average body mass? Which species has the longest maximum flipper length?
+
+
+
+# Part D: Reshaping Data
+# 1. **Convert the `penguins` dataset from wide to long format** using the `pivot_longer()` function. 
+#    Focus on the columns `bill_length_mm`, `flipper_length_mm`, and `body_mass_g`. 
+#    Print the first rows. 
+
+
+
+
+# 2. **Now, convert the data back to wide format** using the `pivot_wider()` function. Print the first rows. 
+
+
+
+
+# Step E: Handling Missing Data
+# 1. **Identify rows with `NA` values** in any column. Print these rows. 
+
+
+
+# 2. **Remove rows with missing values** from the dataset. 
+#.   Print the first rows. 
+
+
+
+# 3. **Fill missing values** in the `body_mass_g` column with the mean body mass.
+#    Print the first rows. 
+
+
+
+
+# Step F: Save the Modified Dataset
+# 1. **Save the final cleaned and modified dataset** as a CSV file.
+
+
+
+```
+

@@ -1,0 +1,136 @@
+---
+title: "LabExercises_Week01"
+author: "Alison Lawyer"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+### keep this chunk in all your RMarkdown scripts
+```{r setup, include = TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+```
+
+
+```{r}
+
+# Lab Objectives
+# In today's lab, we will:
+# - Explore different types of data structures in R.
+# - Import a dataset and perform basic data inspection.
+# - Manipulate data using functions from the `tidyverse` package.
+# - Reshape data using `pivot_longer()` and `pivot_wider()`.
+# - Categorize continuous data into factors using the `cut()` function.
+# - Handle missing data (NA values).
+
+# Setup: Loading Required Packages
+# Install and load the required packages
+# install.packages("tidyverse")
+library(tidyverse)
+
+# Step 1: Importing a Dataset
+# We will use a built-in dataset `iris` in this lab, which contains data on the characteristics of iris flowers.
+
+# Load the iris dataset
+data("iris")
+
+# View the first few rows of the dataset
+head(iris)
+
+# Inspect the dataset:
+# - What are the dimensions of the dataset?
+# - How are the variables structured?
+
+# Dimensions of the dataset
+dim(iris)
+
+# Summary statistics of the dataset
+summary(iris)
+
+# Data structure
+str(iris)
+
+# Step 2: Basic Data Manipulation
+# The `tidyverse` offers powerful functions to manipulate and clean your data. Let’s explore `filter()`, `select()`, `arrange()`, and `mutate()`.
+
+# Select specific columns (e.g., only Sepal and Species columns)
+iris_selected <- select(iris, Sepal.Length, Sepal.Width, Species)
+head(iris_selected)
+
+# Filter the dataset to only include flowers with Sepal.Length greater than 5
+iris_filtered <- filter(iris, Sepal.Length > 5)
+head(iris_filtered)
+
+# Arrange the dataset by Sepal.Length in descending order
+iris_arranged <- arrange(iris, desc(Sepal.Length))
+head(iris_arranged)
+
+# Create new variables using `mutate()`. Let's calculate the ratio of Sepal.Length to Sepal.Width
+iris <- mutate(iris, Sepal.Ratio = Sepal.Length / Sepal.Width)
+head(iris)
+
+# Step 3: Categorizing Data with `cut()`
+# We can categorize continuous variables using `cut()`. Let’s create categories for the `Sepal.Length` variable.
+
+# Categorize Sepal.Length into bins: "Short", "Medium", and "Long"
+iris <- iris %>% mutate(Sepal.Length.Category =
+                        cut(Sepal.Length,
+                            breaks = c(4, 5.5, 6.5, 8),
+                            labels = c("Short", "Medium", "Long")))
+
+# Check the distribution of the new categories
+table(iris$Sepal.Length.Category) # count indiv rows in each category
+
+# Step 4: Reshaping Data with `pivot_longer()` and `pivot_wider()`
+# Reshaping data is an important concept for manipulating datasets for analysis. We will reshape the iris dataset to demonstrate this.
+
+# Pivot data from wide to long format
+iris_long <- iris %>% pivot_longer(cols = Sepal.Length:Petal.Width,
+                                   names_to = "Measurement",
+                                   values_to = "Value")
+head(iris_long)
+
+# Now, reshape it back to wide format using `pivot_wider()`
+iris_wide <- iris_long %>% pivot_wider(names_from = Measurement,
+                                       values_from = Value)
+head(iris_wide)
+
+# Step 5: Handling Missing Data
+# Although the `iris` dataset doesn't have missing data, we will simulate a scenario where there are some `NA` values and learn how to handle them.
+
+# Create a copy of the iris dataset and introduce NA values
+iris_with_na <- iris
+set.seed(123) # For reproducibility (but how?)
+iris_with_na[sample(1:nrow(iris_with_na), 10), "Sepal.Length"] <- NA
+head(iris_with_na)
+
+# Identify rows with `NA` values
+iris_with_na %>% filter(is.na(Sepal.Length))
+
+# Remove rows with `NA` values
+iris_no_na <- iris_with_na %>% drop_na(Sepal.Length)
+head(iris_no_na)
+
+# Fill `NA` values with the mean of the Sepal.Length variable
+iris_filled <- iris_with_na %>% mutate(Sepal.Length = ifelse(is.na(Sepal.Length), 
+                                                            mean(Sepal.Length, na.rm = TRUE),
+                                                            Sepal.Length))
+head(iris_filled)
+
+# Step 6: Save the Cleaned Dataset
+# It's always a good idea to save your manipulated dataset.
+
+# Save the modified dataset to your working directory
+write.csv(iris_filled, "iris_cleaned.csv")
+
+# Summary
+# In this lab, we covered the following concepts:
+# - Basic data exploration and inspection.
+# - Selecting, filtering, and arranging data with `tidyverse` functions.
+# - Creating new variables with `mutate()`.
+# - Categorizing continuous variables into factors using `cut()`.
+# - Reshaping data using `pivot_longer()` and `pivot_wider()`.
+# - Handling missing values using `drop_na()` and filling missing values with `mutate()`.
+# These are essential skills in data preparation and manipulation for ecology and evolutionary biology research.
+
+```
+
