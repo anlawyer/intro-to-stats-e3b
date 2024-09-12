@@ -84,7 +84,8 @@ table(iris$Sepal.Length.Category) # count indiv rows in each category
 # Reshaping data is an important concept for manipulating datasets for analysis. We will reshape the iris dataset to demonstrate this.
 
 # Pivot data from wide to long format
-iris_long <- iris %>% pivot_longer(cols = Sepal.Length:Petal.Width,
+iris_long <- iris %>% mutate(sample = row_number()) %>% 
+  pivot_longer(cols = Sepal.Length:Petal.Width,
                                    names_to = "Measurement",
                                    values_to = "Value")
 head(iris_long)
