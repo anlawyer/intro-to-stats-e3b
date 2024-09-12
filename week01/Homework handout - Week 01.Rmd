@@ -89,34 +89,36 @@ head(penguins_grouped)
 # 1. **Convert the `penguins` dataset from wide to long format** using the `pivot_longer()` function. 
 #    Focus on the columns `bill_length_mm`, `flipper_length_mm`, and `body_mass_g`. 
 #    Print the first rows. 
-
-
+penguins_long <- penguins %>% pivot_longer(cols = c(bill_length_mm, flipper_length_mm, body_mass_g),
+                                           names_to = "Measurement",
+                                           values_to = "Values")
+head(penguins_long)
 
 
 # 2. **Now, convert the data back to wide format** using the `pivot_wider()` function. Print the first rows. 
-
-
+penguins_wide <- penguins_long %>% pivot_wider(names_from = Measurement,
+                                          values_from = Values)
+head(penguins_wide)
 
 
 # Step E: Handling Missing Data
 # 1. **Identify rows with `NA` values** in any column. Print these rows. 
-
-
+na_rows <- penguins[!complete.cases(penguins),]
+print(na_rows)
 
 # 2. **Remove rows with missing values** from the dataset. 
 #.   Print the first rows. 
-
-
+no_na <- penguins %>% na.omit()
+head(no_na)
 
 # 3. **Fill missing values** in the `body_mass_g` column with the mean body mass.
 #    Print the first rows. 
-
-
-
+penguins_mass_filled <- penguins %>% replace_na(list(body_mass_g = as.integer(mean(no_na$body_mass_g))))
+head(penguins_mass_filled)
 
 # Step F: Save the Modified Dataset
 # 1. **Save the final cleaned and modified dataset** as a CSV file.
-
+write.csv(penguins_mass_filled, "penguins_cleaned.csv")
 
 
 ```
