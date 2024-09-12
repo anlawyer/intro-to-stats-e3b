@@ -26,7 +26,6 @@ knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 90), tidy = TRUE)
 # Install/load and load the required packages
 # Remember, if you have previously installed a package (like tidyverse) you do not need to install it again, just load it
 library(tidyverse)
-install.packages("palmerpenguins")
 library(palmerpenguins)
 
 # Part A: Import and Explore the Dataset
