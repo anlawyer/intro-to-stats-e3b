@@ -74,14 +74,22 @@ head(penguins)
 #    - The average body mass (`body_mass_g`) for each species.
 #    - The maximum flipper length (`flipper_length_mm`) for each species.
 #    Print the grouped dataframe
+
+## initial attempt, produced summary table with NA for 2/3 species
 penguins_grouped <- penguins %>% 
   group_by(species) %>% 
   summarise(avg_body_mass = mean(body_mass_g), max_flipper_length = max(flipper_length_mm))
 head(penguins_grouped)
 
+## second attempt, avoiding NA values
+penguins_grouped <- penguins %>% 
+  group_by(species) %>% 
+  summarise(avg_body_mass = mean(body_mass_g, na.rm = TRUE), max_flipper_length = max(flipper_length_mm, na.rm = TRUE))
+head(penguins_grouped)
 
 # 2. **Interpret the results**. Which species has the highest average body mass? Which species has the longest maximum flipper length?
-# The Chinstrap species has values for the average and max, while the other two species show "NA".
+
+## Answer: The Gentoo species has the highest average body mass, as well as the longest max flipper length.
 
 
 # Part D: Reshaping Data
@@ -102,17 +110,27 @@ head(penguins_wide)
 
 # Step E: Handling Missing Data
 # 1. **Identify rows with `NA` values** in any column. Print these rows. 
-na_rows <- penguins[!complete.cases(penguins),]
-print(na_rows)
+penguins_na_rows <- penguins[!complete.cases(penguins),]
+print(penguins_na_rows)
 
 # 2. **Remove rows with missing values** from the dataset. 
 #.   Print the first rows. 
-no_na <- penguins %>% na.omit()
-head(no_na)
+penguins_no_na <- penguins %>% na.omit()
+head(penguins_no_na)
 
 # 3. **Fill missing values** in the `body_mass_g` column with the mean body mass.
-#    Print the first rows. 
-penguins_mass_filled <- penguins %>% replace_na(list(body_mass_g = as.integer(mean(no_na$body_mass_g))))
+#    Print the first rows.
+
+## first attempt, using `replace_na`
+penguins_mass_filled <- penguins %>% replace_na(list(body_mass_g = 
+                                                       as.integer(mean(penguins$body_mass_g, na.rm = TRUE))))
+head(penguins_mass_filled)
+
+## second attempt, using `ifelse`
+penguins_mass_filled <- penguins %>% mutate(body_mass_g =
+                                              ifelse(is.na(body_mass_g),
+                                                     mean(body_mass_g, na.rm = TRUE),
+                                                     body_mass_g))
 head(penguins_mass_filled)
 
 # Step F: Save the Modified Dataset
