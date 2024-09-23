@@ -1,0 +1,141 @@
+---
+title: "Lab Exercises Week 02"
+author: "Alison Lawyer"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include = TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+```
+
+
+
+# LAB EXERCISES
+
+This week you will continue practicing basic R syntax, functions, and descriptive summary statistics. 
+You will also make a pretty table that you could use to report your results in a document or presentation. 
+For all exercises, we will use the palmer penguins data that you started using for homework 1. 
+
+
+## Part 1
+
+First, let's look at NA values a bit more closely
+
+```{r}
+library(tidyverse)
+library(dplyr)
+
+# Load the palmer penguin dataset
+library(palmerpenguins)
+penguins <- data.frame(penguins)
+
+# You can use the function is.na() to test whether any value in a vector of values is NA
+# Check for NAs in the column 'body_mass_g'
+body_mass_na <- is.na(penguins$body_mass_g)
+print(body_mass_na)
+
+# It will be difficult to detect the TRUE values in a sea of FALSE values
+# Since TRUE/FALSE are internally stored as 1/0 values, we can do numerical calculations on the result of is.na()
+# Let's try that with sum() function by wrapping the is.na() function in a sum() function
+# Wrapping a function means using one function inside of another function
+body_mass_na_sum <- sum(is.na(penguins$body_mass_g))
+print(body_mass_na_sum)
+
+
+# This is the number of rows with missing values for body mass.
+# We can use this to incorporate the calculation in a summarize() function too. 
+# Create a summary by species using the summarize() function, where a new variable holds the number of missing values for 'body_mass_g'. 
+grouped_missing_body_mass <- penguins %>% group_by(species) %>%
+                                           summarize(sum_missing_body_mass = sum(is.na(body_mass_g)))
+head(grouped_missing_body_mass)
+
+
+# Now let's add to that also the proportion of missing values for each species, that is, the count of missing values divided by the total number of rows for each species. Add that to your code above and re-create the summary with two variables, one for number of missing rows and one for percentage of missing rows. Both variables will be created in the same summarize() function statement. Hint: you can use the function n() to count the number of rows.
+grouped_proportion <- penguins %>% group_by(species) %>%
+  summarize(total_missing_rows = sum(is.na(body_mass_g)), proportion_missing = (sum(is.na(body_mass_g))/n())*100)
+head(grouped_proportion)
+
+
+# When dealing with multiple variables that each may have missing values, one way to filter the dataset to only those rows with no missing values in any variable is to use the function complete.cases(). Look up the help for this function by typing ?complete.cases into your console. See if you can figure out how to use this function. If it is not obvious from the help page, use other resources online or play around until you get it to work (this is a very common way to solve coding problems!).
+penguins_without_missing_rows <- penguins[complete.cases(penguins),]
+# penguins_without_missing_rows <- penguins %>% filter(complete.cases(penguins))
+# penguins_without_missing_rows <- na.exclude(penguins)
+# penguins_without_missing_rows <- na.omit(penguins)
+head(penguins_without_missing_rows)
+
+
+
+```
+
+
+
+## Part 2
+
+Now let's look at the distribution of body mass for each species by making histograms
+
+```{r}
+
+# Create a new dataframe holding body mass data for Adelie penguins only. Keep the species, sex, and body_mass_g columns only
+adelie_penguins <- penguins %>% filter(species == "Adelie") %>% select(c(species, sex, body_mass_g))
+gentoo_penguins <- penguins %>% filter(species == "Gentoo") %>% select(c(species, sex, body_mass_g))
+chinstrap_penguins <- penguins %>% filter(species == "Chinstrap") %>% select(c(species, sex, body_mass_g))
+head(gentoo_penguins)
+
+# Use the function hist() to make a histogram of weight for Adelie penguins
+hist(adelie_penguins$body_mass_g)
+hist(gentoo_penguins$body_mass_g)
+hist(chinstrap_penguins$body_mass_g)
+
+# Is there skew in the data, and if so are the data left or right skewed? 
+# plot mean and median lines to help visualize 
+
+
+# Repeat this for the other two species and answer the same question
+
+
+
+
+
+```
+
+
+
+## Part 3
+
+Now, let's practice adding some descriptive statistics of body mass and save everything in a summary dataframe. 
+```{r}
+
+# Create a summary dataframe of the variable body_mass_g by species that contains the following descriptive stats: 
+# Mean, Sample Variance, Sample Standard Deviation, Median, Interquartile Range (Tip: look up function IQR() to do this), Min, Max, Number of observations
+
+penguins %>% group_by(species) %>% 
+  summarize(mean = mean(body_mass_g, na.rm=TRUE),
+            variance = var(body_mass_g, na.rm=TRUE),
+            sd = sd(body_mass_g, na.rm=TRUE),
+            median = median(body_mass_g, na.rm=TRUE),
+            IQR = IQR(body_mass_g, na.rm=TRUE),
+            min = min(body_mass_g, na.rm=TRUE),
+            max = max(body_mass_g, na.rm=TRUE),
+            count = n())
+
+
+```
+
+
+## Part 4
+
+Finally, let's make a more automated data summary in form of a tidy table using the table1 package
+
+```{r}
+
+# Make a pretty table of your data summary with the table1() function
+# The table should list species as columns and summary statistics for body mass as rows
+library(table1)
+table1(~body_mass_g | species, data = na.omit(penguins))
+
+```
+
+
+
