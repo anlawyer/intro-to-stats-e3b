@@ -1,0 +1,97 @@
+---
+title: "Homework Exercises Week 03"
+author: "Alison Lawyer"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+### keep this chunk in all your RMarkdown scripts
+```{r setup, include = TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+```
+
+
+
+# HOMEWORK EXERCISES
+
+
+## Part 1
+
+Create a density plot showing the distribution of body mass for each species. Use facet_wrap() to create separate density plots for males and females. Adjust the bandwidth parameter and color transparency. 10 pts
+
+```{r}
+library(tidyverse)
+library(palmerpenguins)
+data(penguins)
+
+
+na.omit(penguins) %>%
+  ggplot(aes(x = body_mass_g)) + 
+  geom_density(fill = "darkblue", alpha = 0.8, bw = 80) + 
+  facet_wrap(vars(species, sex), nrow = 3) +
+  labs(title = "Body mass by species and sex",
+       x = "Body mass (g)",
+       y = "Density") +
+  theme_minimal()
+```
+
+
+Reshape the data into long (tidy) format. Create a boxplot of bill length and bill depth by species using the penguins dataset. Use facet_grid() to place both boxplots on the same row. 10 pts
+
+```{r}
+penguins_long <- penguins %>%
+  pivot_longer(cols = c(bill_length_mm, flipper_length_mm, body_mass_g, bill_depth_mm),
+                                           names_to = "Measurement",
+                                           values_to = "Values")
+
+penguins_long %>% 
+  ggplot(aes(x = )) + 
+  geom_boxplot() +
+  theme_minimal() + 
+```
+
+
+Plot the mean body mass by species and by sex to assess whether sexual dimorphism in body weight varies by species. Use facets to create one graph per species showing the mean for each sex. Add error bars for the standard deviation of weight to all plots. Evaluate the result. 10 pts
+
+```{r}
+penguins_means <- na.omit(penguins) %>%
+  group_by(sex, species) %>%
+  summarize(mean_body_mass = mean(body_mass_g),
+            sd_body_mass = sd(body_mass_g))
+
+penguins_means %>%
+  ggplot(aes(x = sex, y = mean_body_mass, fill = sex)) +
+  theme_minimal() +
+  geom_col() +
+    labs(title = "Plot of mean body mass", 
+       x = "Sex", 
+       y = "Body mass (g)") +
+  geom_errorbar(aes(
+    ymin = mean_body_mass - sd_body_mass, 
+    ymax = mean_body_mass + sd_body_mass), 
+    width = 0.3) +
+  facet_wrap(~species, nrow = 3)
+
+
+```
+
+
+
+
+## Part 2
+
+Identify a research question or hypothesis about the penguins dataset. Create a customized ggplot2 visualization to explore this question. For example, you might investigate the relationship between body mass and flipper length within a specific species or compare the distribution of measurements between different islands. Please do not copy any example from lecture or lab, so be sure to ask a question that was not already visualized previously. 10 pts
+
+Question: 
+
+```{r}
+# Add all code to explore your question visually here. Then answer your question below. 
+
+
+```
+
+Answer: 
+
+
+
