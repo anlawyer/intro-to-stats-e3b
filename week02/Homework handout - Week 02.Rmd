@@ -126,12 +126,12 @@ Now that you have decided on the appropriate descriptive statistics for your Ade
 # Calculate the mean and standard deviation for each of the three continuous variables and arrange them in a summary dataframe that contains species, sex, means and standard deviations for each measure (total of 8 columns). 
 adelie_penguins_no_na %>%
   group_by(sex, species) %>% 
-  summarize(mean_body_mass = mean(body_mass),
-            sd_body_mass = sd(body_mass),
-            mean_bill_depth = mean(bill_depth),
+  summarize(mean_bill_depth = mean(bill_depth),
             sd_bill_depth = sd(bill_depth),
             mean_bill_length = mean(bill_length),
-            sd_bill_length = sd(bill_length))
+            sd_bill_length = sd(bill_length),
+            mean_body_mass = mean(body_mass),
+            sd_body_mass = sd(body_mass))
 
 
 
