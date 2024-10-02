@@ -23,12 +23,13 @@ Create a density plot showing the distribution of body mass for each species. Us
 ```{r}
 library(tidyverse)
 library(palmerpenguins)
+library(ggthemes)
 data(penguins)
 
 
 na.omit(penguins) %>%
   ggplot(aes(x = body_mass_g)) + 
-  geom_density(fill = "darkblue", alpha = 0.8, bw = 80) + 
+  geom_density(fill = "darkblue", alpha = 0.75, bw = 80) + 
   facet_wrap(vars(species, sex), nrow = 3) +
   labs(title = "Body mass by species and sex",
        x = "Body mass (g)",
@@ -40,27 +41,32 @@ na.omit(penguins) %>%
 Reshape the data into long (tidy) format. Create a boxplot of bill length and bill depth by species using the penguins dataset. Use facet_grid() to place both boxplots on the same row. 10 pts
 
 ```{r}
-penguins_long <- penguins %>%
-  pivot_longer(cols = c(bill_length_mm, flipper_length_mm, body_mass_g, bill_depth_mm),
+penguins_long <- na.omit(penguins) %>%
+  rename("Bill length (mm)" = bill_length_mm, "Bill depth (mm)" = bill_depth_mm) %>%
+  pivot_longer(cols = c("Bill length (mm)", flipper_length_mm, body_mass_g, "Bill depth (mm)"),
                                            names_to = "Measurement",
                                            values_to = "Values")
 
 penguins_long %>% 
-  ggplot(aes(x = )) + 
+  filter(Measurement == c("Bill length (mm)", "Bill depth (mm)")) %>%
+  ggplot(aes(x = species, y = Values)) + 
   geom_boxplot() +
+  facet_grid(cols = vars(Measurement)) +
   theme_minimal() + 
+  labs(title = "Bill depth and bill length by species",
+       y = "Values (mm)",
+       x = "Species")
+
 ```
 
 
 Plot the mean body mass by species and by sex to assess whether sexual dimorphism in body weight varies by species. Use facets to create one graph per species showing the mean for each sex. Add error bars for the standard deviation of weight to all plots. Evaluate the result. 10 pts
 
 ```{r}
-penguins_means <- na.omit(penguins) %>%
+na.omit(penguins) %>%
   group_by(sex, species) %>%
   summarize(mean_body_mass = mean(body_mass_g),
-            sd_body_mass = sd(body_mass_g))
-
-penguins_means %>%
+            sd_body_mass = sd(body_mass_g)) %>%
   ggplot(aes(x = sex, y = mean_body_mass, fill = sex)) +
   theme_minimal() +
   geom_col() +
@@ -71,8 +77,9 @@ penguins_means %>%
     ymin = mean_body_mass - sd_body_mass, 
     ymax = mean_body_mass + sd_body_mass), 
     width = 0.3) +
-  facet_wrap(~species, nrow = 3)
+  facet_wrap(~species)
 
+## Evaluation: The male penguins in each species has a larger body mass than their female counterparts. The Chinstrap species appears to have the least difference of body mass between both sexes.
 
 ```
 
@@ -83,15 +90,23 @@ penguins_means %>%
 
 Identify a research question or hypothesis about the penguins dataset. Create a customized ggplot2 visualization to explore this question. For example, you might investigate the relationship between body mass and flipper length within a specific species or compare the distribution of measurements between different islands. Please do not copy any example from lecture or lab, so be sure to ask a question that was not already visualized previously. 10 pts
 
-Question: 
+Question: Is there a relationship between bill length and body mass? i.e. does a "bigger" bill also relate to bigger penguins? Can we compare between species and sexes?
 
 ```{r}
 # Add all code to explore your question visually here. Then answer your question below. 
-
+na.omit(penguins) %>%
+  ggplot(aes(x = bill_length_mm, y = body_mass_g)) +
+  geom_point() +
+  geom_smooth(method = "lm", aes(fill = sex)) + 
+  facet_wrap(~species) +
+  theme_clean() +
+  labs(title = "Bill length compared to body mass by species",
+       x = "Bill length (mm)",
+       y = "Body mass (g)")
 
 ```
 
-Answer: 
+Answer: Generally, yes. We can see the upward trend of the data points in the graphs which indicates that a larger bill size relates to a larger body mass in penguins of all species and in both sexes. 
 
 
 
