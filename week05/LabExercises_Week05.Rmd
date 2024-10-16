@@ -1,0 +1,81 @@
+---
+title: "Lab Exercises Week 05"
+author: "Alison Lawyer"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include = TRUE}
+# keep this chunk in all your RMarkdown scripts
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+```
+
+```{r}
+# List required packages
+library(tidyverse)
+
+```
+
+
+
+# LAB EXERCISES
+
+In this week's lab, you will practicing application of probability distributions and z-scores to probabilistic problems in ecology and evolutionary biology. 
+
+
+
+## Exercise 1
+
+In a study of a bird population, it is observed that 20% of nests contain 5 or more eggs. If you randomly select 8 nests, what is the probability that at least 3 of them have 5 or more eggs?
+
+```{r}
+pbinom(2, size = 8, prob = 0.20, lower.tail = FALSE)
+
+```
+
+
+## Exercise 2
+
+In a field study, it is observed that 30% of a certain species of plants bear fruit. If you randomly select 15 plants, what is the probability that 6 or fewer of them bear fruit?
+
+```{r}
+pbinom(6, size = 15, prob = 0.30)
+
+```
+
+
+## Exercise 3
+
+In a study of fish populations, the lengths of fish are normally distributed with a mean of 20 cm and a standard deviation of 4 cm. Calculate the z-score for a fish with a length of 26 cm.
+
+```{r}
+fish_mean <- 20
+fish_sd <- 4
+
+fish_z_score <- (26 - fish_mean) / fish_sd
+
+```
+
+
+
+
+## Exercise 4
+
+In a study of tree heights, you have data from two different forests. Forest X has a mean tree height of 25 meters with a standard deviation of 5 meters, while Forest Y has a mean tree height of 23 meters with a standard deviation of 30 meters.
+
+A tree in Forest X has a height of 26 meters, and a tree in Forest Y has a height of 28 meters. Calculate and compare the z-scores for these two trees. Discuss the implications of the z-scores in the context of the widely differing standard deviations.
+
+```{r}
+x_tree_mean <- 25
+x_tree_sd <- 5
+y_tree_mean <- 23
+y_tree_sd <- 30
+
+x_z_score <- (26 - x_tree_mean) / x_tree_sd
+y_z_score <- (28 - y_tree_mean) / y_tree_sd
+```
+
+
+Answer: 
+

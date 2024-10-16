@@ -1,0 +1,136 @@
+---
+title: "Lab Exercises Week 06"
+author: "[your name here]"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include = TRUE}
+# keep this chunk in all your RMarkdown scripts
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+```
+
+```{r}
+# List required packages
+library(tidyverse)
+library(PresenceAbsence)
+
+# Load SPDATA from PresenceAbsence package
+data("SPDATA")
+
+```
+
+
+
+# LAB EXERCISES
+
+In this week's lab you will be practicing random sampling to better understand the central limit theorem and its implications for estimating population parameters. You will also use and apply the concepts of standard error and confidence interval.
+
+The dataset SPDATA, introduced in Session 05, contains presence/absence records of trees at 386 forest locations. You can load it, after installing the package PresenceAbsence, using the command data("SPDATA").
+
+
+
+## Exercise 1
+
+In the first exercise, we want to take 5 random samples of 20 sites, and for each of the 5 random samples, measure the prevalence of Bigtooth maples (ACGR3) across sites. Then we want to calculate the proportion of sites in each sample where this species is present, so we will have 5 proportions, one for each of the samples, where each sample consists of 20 random sites. 
+
+Instructions: 
+- Use set.seed(1234) to be sure everyone gets the same result. 
+- Create two variables called sample_size and num_samples
+- Assign 20 to sample_size and 5 to num_samples
+- Filter your dataset and select columms SPECIES and OBSERVED, save this as a new dataframe
+- First start by conducting random sampling using the function sample()
+- Notice the result is a dataframe with just your random sample and the two columns you selected
+- Now, we need to repeat this operation 5 times. You can achieve this with the function replicate() or a for loop
+- By default, replicate() tries to simplify the result into a vector, which doesn't work very well in this case, so set the simplify argument to FALSE, which will result in a list, where each element of the list is one draw of 20 random rows
+- Combine the list into a dataframe. This can be achieved through bind_rows() function, feeding it the list object
+- To keep track of each of the 5 random draws, add an identifier to the bind_rows() function, like .id = "sample_id"
+- Check your output, which should be a dataframe with sample_id, SPECIES, and OBSERVED columns
+- Finally, calculate the proportion of sites with the species present for each of the five random samples. 
+- Check that your final dataframe has 5 rows, consisting of sample_id and prevalence columns
+
+```{r}
+
+
+
+
+```
+
+
+
+## Exercise 2
+
+Plot the distribution of estimated prevalence from above using a histogram. 
+Adjust the binwidth parameter to be 0.01 instead of the default, which is 30 bins over the range of values. 
+Add a vertical line for the overall prevalence of the species (0.06), and a second line for the actual mean of prevalence observed across your replicated random samples. 
+Make sure both lines are uniquely identified. You can but do not need to label the lines. 
+
+Describe what you see. 
+
+```{r}
+
+
+
+```
+
+Answer: 
+
+
+
+
+## Exercise 3
+
+Repeat exercises 1 & 2, but this time increase the number of replicates to 50 instead of 5. 
+Be sure to again include the same set.seed(1234) from above. 
+Save your dataframe holding the prevalence estimates in a new object. You will be needing it later. 
+
+Describe the distribution. 
+What implications does this have for your ability to study the distribution of Bigtooth maples? 
+
+```{r}
+
+
+```
+
+Answer: 
+
+
+
+
+## Exercise 4
+
+Let's repeat this one more time. Now keep the number of replicates at 50 but increase the sample size each time to 100 sites. Be sure to again include the same set.seed(1234) from above. 
+
+Describe the distribution. 
+What implications does this have for your ability to study the distribution of Bigtooth maples? 
+
+```{r}
+
+
+
+
+```
+
+Answer: 
+
+
+
+## Exercise 5
+
+Calculate the standard error and 95% confidence interval of sample prevalence from Exercises 1, 3 and 4. 
+Which of the confidence intervals includes the "true" prevalence, if any? 
+What do you make of this finding? 
+Discuss the implications in terms of accuracy and precision of your prevalence estimates. 
+
+```{r}
+
+
+
+
+```
+
+
+Answer: 
+
+
