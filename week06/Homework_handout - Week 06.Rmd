@@ -1,0 +1,148 @@
+---
+title: "Homework Exercises Week 06"
+author: "Alison Lawyer"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include = TRUE}
+# keep this chunk in all your RMarkdown scripts
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+```
+
+```{r}
+# List required packages
+library(tidyverse)
+library(PresenceAbsence)
+library(ggplot2)
+library(palmerpenguins)
+
+data("SPDATA")
+data("penguins")
+
+```
+
+
+
+# HOMEWORK EXERCISES
+
+## Exercise 1
+
+Building on exercise 4 from the lab, at what number of repeated random draws of 100 samples each does the resulting distribution become almost perfectly normal? 
+
+While keeping set.seed() the same, iterate through different values for your number of repeated samples, while keeping sample size at 100 sites each time. Keep only your last iteration that you feel best reflects a normal distribution of prevalence values. At this iteration, how does your mean prevalence across samples compare to the population prevalence? 
+
+```{r}
+set.seed(1234)
+sample_size <- 100
+num_samples <- 3000
+
+filtered_dataset <- SPDATA %>% 
+  select(c(SPECIES, OBSERVED)) %>% 
+  filter(SPECIES == "ACGR3")
+sample_n(filtered_dataset, size = sample_size, replace = FALSE)
+
+set.seed(1234)
+compiled_random_samples <- replicate(n = num_samples, 
+                                     expr = sample_n(filtered_dataset, size = sample_size, replace = FALSE), 
+                                     simplify = FALSE) %>%
+  bind_rows(.id = "sample_id")
+
+has_bigtooth_maples <- compiled_random_samples %>%
+  group_by(sample_id) %>%
+  summarize(prevalence = sum(ifelse(OBSERVED == 1, 1, 0)) / n())
+# add the total number of observations and divide by total number of rows
+
+ggplot(has_bigtooth_maples, aes(x = prevalence)) +
+  geom_histogram(binwidth = 0.01) +
+  geom_vline(aes(xintercept = 0.06), color = "red", linetype = "dashed") +
+  geom_vline(aes(xintercept = mean(prevalence)), color = "blue", linetype = "solid")
+
+mean(has_bigtooth_maples$prevalence)
+```
+
+
+Answer: 
+I got fairly close to a normal distribution at around 3000 repeated samples. The mean prevalence is very close to the population mean at this number of repeated samples, indicating that we can closely approximate the population mean when enough repeated sampling of a given dataset produces a near-normal distribution. 
+
+
+
+## Exercise 2
+
+Using the penguin dataset from package palmerpenguins that you have worked with before (use the cleaned dataframe called "penguins"), assess the difference in flipper length between adelie and chinstrap penguins. 
+
+Calculate mean, standard error and 95% confidence interval of flipper length for both species. 
+Plot the result as a bar chart with error bars, where error bars stand for the 95% confidence interval. 
+Label your graph as appropriate. 
+Which species has a larger standard error and why do you think that is?
+Interpret the result. Be sure to use confidence interval in your interpretation. 
+
+```{r}
+filtered_penguins <- na.omit(penguins) %>%
+  select(flipper_length_mm, species) %>%
+  filter(species == "Adelie" | species == "Chinstrap")
+
+summarized <- filtered_penguins %>% group_by(species) %>%
+  summarize(mean_flipper_length = mean(flipper_length_mm),
+            standard_error = sd(flipper_length_mm) / sqrt(n()),
+            lower_ci = mean_flipper_length - 1.96 * standard_error,
+            upper_ci = mean_flipper_length + 1.96 * standard_error
+            )
+
+ggplot(summarized, aes(y = mean_flipper_length, x = species, fill = species)) +
+  geom_col() +
+  geom_errorbar(aes(ymin = lower_ci,
+                    ymax = upper_ci,
+                    linetype = "95% CI of\nsample mean",
+                    width = .5)) + 
+  labs(title = "Average flipper lengths by species", y = "Mean flipper length", x = "Species") +
+  theme_minimal()
+```
+
+Answer: 
+The Chinstrap species has a larger standard error, likely meaning that the sample is more spread out around the population mean (the sample is not as close to the actual population mean as the sample for the Adelie species). The Adelie species also has a narrower range for the confidence interval, meaning that the sample for Adelie penguins is more stable/less variable than the sample for Chinstrap penguins (the estimate would vary more if we took additional samples for the Chinstrap species). 
+
+
+
+## Exercise 3
+
+Now simulate a sampling distribution of means for flipper length from the data, for the same two species as above, using random sampling with replacement. Collect data from 10 penguins per species in each random sample and collect a total of 100 random samples (so each of the 100 samples includes 10 of each of the two species and their flipper length measures). 
+
+Calculate the mean flipper length for each sample so you will end up with 100 means for each species. 
+Calculate the standard deviation of the mean for this sampling distribution. How does it compare to the standard error you calculated in Exercise 2 above? Explain what is going on. 
+
+```{r}
+filtered_adelie <- na.omit(penguins) %>%
+  select(flipper_length_mm, species) %>%
+  filter(species == "Adelie")
+
+adelie_samples <- replicate(n = 100, 
+          expr = sample_n(filtered_adelie, size = 10, replace = TRUE), 
+          simplify = FALSE) %>%
+  bind_rows(.id = "sample_id")
+
+adelie_means <- adelie_samples %>% 
+  group_by(sample_id) %>%
+  summarize(mean = mean(flipper_length_mm))
+
+sd(adelie_means$mean)
+
+filtered_chinstrap <- na.omit(penguins) %>%
+  select(flipper_length_mm, species) %>%
+  filter(species == "Chinstrap")
+
+chinstrap_samples <- replicate(n = 100, 
+          expr = sample_n(filtered_chinstrap, size = 10, replace = TRUE), 
+          simplify = FALSE) %>%
+  bind_rows(.id = "sample_id")
+
+chinstrap_means <- chinstrap_samples %>% 
+  group_by(sample_id) %>%
+  summarize(mean = mean(flipper_length_mm))
+
+sd(chinstrap_means$mean)
+```
+
+Answer:
+The SDs for this distribution seem to align with the SEs from the previous exercise: they seem to indicate that the Chinstrap samples have more variability / less precision than the samples for the Adelie species, due to a larger SD value for the Chinstrap results. 

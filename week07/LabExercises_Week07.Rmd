@@ -1,0 +1,110 @@
+---
+title: "Lab Exercises Week 07"
+author: "[your name here]"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include = TRUE}
+# keep this chunk in all your RMarkdown scripts
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+```
+
+```{r}
+# List required packages
+library(tidyverse)
+library(openxlsx)
+
+```
+
+
+
+# LAB EXERCISES
+
+The dataset behavior.xlsx contains counts of individual squirrel monkeys engaged in different behaviors, by sex of the individual. These data were obtained by observing one group of squirrel monkeys in the wild and recording the behavior of 10 individuals every 5 minutes. The authors of this published study conducted a series of chi-squared tests, one of which you will replicate and discuss below. The overarching question is: Is sex associated with behavior? 
+
+
+## Part 1
+Read in the data
+
+```{r}
+
+
+
+```
+
+
+## Part 2
+Plot the observed counts in a grouped bar chart
+What conclusions do you draw from this chart, without any formal null hypothesis significance testing? 
+Do you think the association between sex and behavior is biologically meaningful? Why or why not?
+
+```{r}
+
+
+```
+
+
+## Part 3
+Reshape the dataframe into a matrix that you can use to run a chi-square test
+
+```{r}
+
+
+
+```
+
+
+## Part 4
+Clearly state your null hypothesis and alternate hypothesis
+Conduct a chi-squared test using the function chisq.test()
+Interpret the output. Do you reject your null hypothesis? Why? 
+How does this result agree or not agree with your initial graphical assessment? 
+
+```{r}
+
+
+
+```
+
+
+## Part 5
+Calculate the standardized residuals
+Is there evidence that your overall hypothesis test is driven by a particular group? Why or why not? 
+
+```{r}
+
+
+
+```
+
+
+## Part 6
+Calculate the effect size.
+Interpret the result. What kind of effect size do you observe? 
+
+```{r}
+
+
+
+
+```
+
+
+
+## Part 7
+Write a summary statement of results including all pertinent information. 
+See lecture slide for an example. 
+
+Answer: 
+
+
+
+## Part 8
+Discuss whether you think the assumptions for the chi-squared test of independence are met. 
+Why or why not? 
+
+Answer: 
+
+

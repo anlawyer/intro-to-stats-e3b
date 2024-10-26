@@ -1,6 +1,6 @@
 ---
 title: "Lab Exercises Week 06"
-author: "[your name here]"
+author: "Alison Lawyer"
 date: "`r Sys.Date()`"
 output: pdf_document
 ---
@@ -15,6 +15,7 @@ knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = TRUE)
 # List required packages
 library(tidyverse)
 library(PresenceAbsence)
+library(ggplot2)
 
 # Load SPDATA from PresenceAbsence package
 data("SPDATA")
@@ -51,12 +52,29 @@ Instructions:
 - Check that your final dataframe has 5 rows, consisting of sample_id and prevalence columns
 
 ```{r}
+set.seed(1234)
+sample_size1 <- 20
+num_samples1 <- 5
 
+filtered_dataset <- SPDATA %>% 
+  select(c(SPECIES, OBSERVED)) %>% 
+  filter(SPECIES == "ACGR3")
+sample_n(filtered_dataset, size = sample_size1, replace = FALSE)
 
+set.seed(1234)
+compiled_random_samples1 <- replicate(n = num_samples1, 
+                                     expr = sample_n(filtered_dataset, size = sample_size1, replace = FALSE), 
+                                     simplify = FALSE) %>%
+  bind_rows(.id = "sample_id")
 
+has_bigtooth_maples1 <- compiled_random_samples1 %>%
+  group_by(sample_id) %>%
+  summarize(prevalence = sum(ifelse(OBSERVED == 1, 1, 0)) / n())
+# add the total number of observations and divide by total number of rows
+has_bigtooth_maples1
 
+  #mutate(prevalence = ifelse(OBSERVED > 0, sum(OBSERVED) / sample_size, 0))
 ```
-
 
 
 ## Exercise 2
@@ -69,7 +87,10 @@ Make sure both lines are uniquely identified. You can but do not need to label t
 Describe what you see. 
 
 ```{r}
-
+ggplot(has_bigtooth_maples1, aes(x = prevalence)) +
+  geom_histogram(binwidth = 0.01) +
+  geom_vline(aes(xintercept = 0.06), color = "red", linetype = "dashed") +
+  geom_vline(aes(xintercept = mean(prevalence)), color = "blue", linetype = "solid")
 
 
 ```
@@ -89,7 +110,32 @@ Describe the distribution.
 What implications does this have for your ability to study the distribution of Bigtooth maples? 
 
 ```{r}
+set.seed(1234)
+sample_size3 <- 20
+num_samples3 <- 50
 
+filtered_dataset <- SPDATA %>% 
+  select(c(SPECIES, OBSERVED)) %>% 
+  filter(SPECIES == "ACGR3")
+sample_n(filtered_dataset, size = sample_size3, replace = FALSE)
+
+set.seed(1234)
+compiled_random_samples3 <- replicate(n = num_samples3, 
+                                     expr = sample_n(filtered_dataset, size = sample_size3, replace = FALSE), 
+                                     simplify = FALSE) %>%
+  bind_rows(.id = "sample_id")
+
+has_bigtooth_maples3 <- compiled_random_samples3 %>%
+  group_by(sample_id) %>%
+  summarize(prevalence = sum(ifelse(OBSERVED == 1, 1, 0)) / n())
+# add the total number of observations and divide by total number of rows
+has_bigtooth_maples3
+
+
+ggplot(has_bigtooth_maples3, aes(x = prevalence)) +
+  geom_histogram(binwidth = 0.01) +
+  geom_vline(aes(xintercept = 0.06), color = "red", linetype = "dashed") +
+  geom_vline(aes(xintercept = mean(prevalence)), color = "blue", linetype = "solid")
 
 ```
 
@@ -106,7 +152,32 @@ Describe the distribution.
 What implications does this have for your ability to study the distribution of Bigtooth maples? 
 
 ```{r}
+set.seed(1234)
+sample_size4 <- 100
+num_samples4 <- 50
 
+filtered_dataset <- SPDATA %>% 
+  select(c(SPECIES, OBSERVED)) %>% 
+  filter(SPECIES == "ACGR3")
+sample_n(filtered_dataset, size = sample_size4, replace = FALSE)
+
+set.seed(1234)
+compiled_random_samples4 <- replicate(n = num_samples4, 
+                                     expr = sample_n(filtered_dataset, size = sample_size4, replace = FALSE), 
+                                     simplify = FALSE) %>%
+  bind_rows(.id = "sample_id")
+
+has_bigtooth_maples4 <- compiled_random_samples4 %>%
+  group_by(sample_id) %>%
+  summarize(prevalence = sum(ifelse(OBSERVED == 1, 1, 0)) / n())
+# add the total number of observations and divide by total number of rows
+has_bigtooth_maples4
+
+
+ggplot(has_bigtooth_maples4, aes(x = prevalence)) +
+  geom_histogram(binwidth = 0.01) +
+  geom_vline(aes(xintercept = 0.06), color = "red", linetype = "dashed") +
+  geom_vline(aes(xintercept = mean(prevalence)), color = "blue", linetype = "solid")
 
 
 
@@ -124,10 +195,38 @@ What do you make of this finding?
 Discuss the implications in terms of accuracy and precision of your prevalence estimates. 
 
 ```{r}
+first_prevalence <- has_bigtooth_maples1$prevalence
+third_prevalence <- has_bigtooth_maples3$prevalence
+fourth_prevalence <- has_bigtooth_maples4$prevalence
+se1 <- sd(first_prevalence)/sqrt(length((first_prevalence)))
+se3 <- sd(third_prevalence)/sqrt(length((third_prevalence)))
+se4 <- sd(fourth_prevalence)/sqrt(length((fourth_prevalence)))
 
+(mean(first_prevalence) + 1.96) * se1
+(mean(third_prevalence) + 1.96) * se3
+(mean(fourth_prevalence) + 1.96) * se4
 
+(mean(first_prevalence) - 1.96) * se1
+(mean(third_prevalence) - 1.96) * se3
+(mean(fourth_prevalence) - 1.96) * se4
 
+has_bigtooth_maples1 %>%
+  summarize(mean = mean(prevalence),
+            se = sd(prevalence) / sqrt(n()),
+            lower_ci = mean - 1.96 * se,
+            upper_ci = mean + 1.96 * se)
 
+has_bigtooth_maples3 %>%
+  summarize(mean = mean(prevalence),
+            se = sd(prevalence) / sqrt(n()),
+            lower_ci = mean - 1.96 * se,
+            upper_ci = mean + 1.96 * se)
+
+has_bigtooth_maples4 %>%
+  summarize(mean = mean(prevalence),
+            se = sd(prevalence) / sqrt(n()),
+            lower_ci = mean - 1.96 * se,
+            upper_ci = mean + 1.96 * se)
 ```
 
 
