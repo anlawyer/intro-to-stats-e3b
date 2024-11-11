@@ -1,6 +1,6 @@
 ---
 title: "Lab Exercises Week 07"
-author: "[your name here]"
+author: "Alison Lawyer"
 date: "`r Sys.Date()`"
 output: pdf_document
 ---
@@ -15,7 +15,8 @@ knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = TRUE)
 # List required packages
 library(tidyverse)
 library(openxlsx)
-
+library(ggplot2)
+library(lsr)
 ```
 
 
@@ -29,7 +30,7 @@ The dataset behavior.xlsx contains counts of individual squirrel monkeys engaged
 Read in the data
 
 ```{r}
-
+behavior <- read.xlsx("behavior.xlsx")
 
 
 ```
@@ -41,7 +42,8 @@ What conclusions do you draw from this chart, without any formal null hypothesis
 Do you think the association between sex and behavior is biologically meaningful? Why or why not?
 
 ```{r}
-
+ggplot(behavior, aes(x = Behavior, y = Count, fill = Sex)) +
+  geom_col(position = "dodge")
 
 ```
 
@@ -50,7 +52,8 @@ Do you think the association between sex and behavior is biologically meaningful
 Reshape the dataframe into a matrix that you can use to run a chi-square test
 
 ```{r}
-
+behavior_wide <- 
+  behavior %>% pivot_wider(names_from = Behavior, values_from = Count)
 
 
 ```
@@ -62,9 +65,11 @@ Conduct a chi-squared test using the function chisq.test()
 Interpret the output. Do you reject your null hypothesis? Why? 
 How does this result agree or not agree with your initial graphical assessment? 
 
+H0: Squirrel monkey behavior is associated with sex
+HA: Squirrel monkey behavior is not associated with sex
 ```{r}
-
-
+chi_test <- chisq.test(behavior_wide[,2:4], correct = FALSE) #correct = F bc the table isn't 2x2
+chi_test
 
 ```
 
@@ -74,8 +79,9 @@ Calculate the standardized residuals
 Is there evidence that your overall hypothesis test is driven by a particular group? Why or why not? 
 
 ```{r}
+(chi_test$observed - chi_test$expected) / sqrt(chi_test$expected)
 
-
+chi_test$residuals
 
 ```
 
@@ -86,7 +92,7 @@ Interpret the result. What kind of effect size do you observe?
 
 ```{r}
 
-
+cramersV(behavior_wide[,2:4], correct = FALSE)
 
 
 ```
