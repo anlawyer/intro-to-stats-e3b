@@ -1,0 +1,184 @@
+---
+title: "Lab Exercises Week 08"
+author: "Alison Lawyer"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include = TRUE}
+# keep this chunk in all your RMarkdown scripts
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+```
+
+```{r}
+# List required packages
+library(tidyverse)
+library(openxlsx)
+library(kableExtra)
+library(ggplot2)
+```
+
+
+
+
+
+# LAB EXERCISES
+
+The dataset "vigilance.xlsx" contains data on vigilant behavior of several European song bird species (expressed as a rater per hour). The study aimed to address the question of whether birds show higher vigilance behavior in urban areas with more noise, which could make it more difficult to use auditory cues for avoiding predators. For each species, data were collected at several sites (cities), each having an "urban noise" and "control" condition. Some environmental factors are also part of this dataset but we will ignore those for now. 
+
+
+
+# Exercise 1
+
+Import the data and clean your column names (remove special characters and shorten for easier use in your code). 
+Filter the dataset to European Robin (RB). 
+
+
+```{r}
+# Load the data
+vigilance <- read.xlsx("vigilance.xlsx")
+
+# Clean column names
+colnames(vigilance) <- sub(pattern = "\\.\\((.*?)\\)", replacement = '', colnames(vigilance))
+
+european_robin <- vigilance %>% filter(species == "RB")
+european_robin
+```
+
+
+Your first task is to conduct exploratory analyses on this species, assessing 
+- measures of central tendency, 
+- variability and 
+- distribution of vigilance rates for control and noise conditions. 
+
+At the end, you should have 
+- a summary table with all relevant measures, 
+- a figure comparing the means in both conditions, and 
+- figures to assess the distribution and potential skew. 
+
+For your table, make it so that your statistics are in rows and the values for control and noise condition are in columns. This produces a table that is easier to read. Format this table so that it is printed nicely in your markdown (tip: the function kable() from the kableExtra package helps). 
+
+Inspect this table and discuss your findings without any formal hypothesis testing. 
+
+```{r}
+# Produce summary table
+summary_table <- european_robin %>%
+  group_by(treatment) %>%
+  summarize(mean_vigilance = mean(vigilance.rate),
+            sd_vigilance = sd(vigilance.rate),
+            median_vigilance = median(vigilance.rate),
+            iqr = IQR(vigilance.rate),
+            var = var(vigilance.rate)
+  )
+
+# Make nice table for printing
+summarized <- summary_table %>% 
+  pivot_longer(cols = "mean_vigilance":"var",
+               names_to = 'stat',
+               values_to = "values") %>%
+  pivot_wider(names_from = treatment, values_from = values)
+  
+transposed <- t(summary_table[,2:6])
+transposed <- as.data.frame(transposed)
+colnames(transposed) <- c("control", "urban noise")
+
+summary <- kable(summarized, caption = "Summary statistics by treatment")
+
+# Print table
+summary
+
+
+# Figure comparing the means
+ggplot(summary_table, aes(x = treatment, y = mean_vigilance, fill = treatment)) +
+  geom_col()
+
+
+# Histograms
+ggplot(european_robin, aes(x = vigilance.rate, fill = treatment)) +
+  geom_histogram(binwidth = 1, position = "dodge")
+
+ggplot(european_robin, aes(x = vigilance.rate, fill = treatment)) +
+  geom_density(alpha = 0.5)
+
+
+# Q-Q plots
+qqnorm(european_robin$vigilance.rate)
+qqline(european_robin$vigilance.rate)
+
+ggplot(european_robin, aes(sample = vigilance.rate)) +
+  stat_qq() +
+  geom_abline(aes(intercept = mean(x = vigilance.rate), 
+                  slope = sd(x = vigilance.rate)))
+
+
+```
+
+Answer: 
+
+
+
+
+# Exercise 2
+
+Conduct an appropriate t-test to test the null hypothesis that vigilance rates do not differ between noise and control conditions for the European Robin. Explain your choice of test. Should any assumptions be violated, discuss why but continue to conduct the test anyways for the sake of the exercise. Interpret the output and write a summary statement.  
+
+```{r}
+# Conduct the t-test
+t_test <- t.test(european_robin$vigilance.rate ~ european_robin$treatment)
+
+# Print the result
+t_test
+
+```
+
+
+Answer: 
+
+
+
+
+
+# Exercise 3
+
+Now compare the difference in vigilance rates between coal tits (CT) and blue tits (BT) across all sites. Do this separately for the control and noise condition. In other words, compare CT and BT in all control sites, and CT and BT in all treatment (noise) sites. To do this, you will need to think carefully about how to arrange your data. You will conduct exploratory analyses for this problem, similar to what you did above, as a homework exercise. 
+
+What is the most appropriate t-tests to use for testing your hypothesis? Explain your choice.
+Interpret your output and write a summary statement of results. 
+
+```{r}
+# run a pair sample t-test
+
+# Reshaping the data for the t-tests
+control <- vigilance %>%
+  filter(treatment == "control",
+         species == "CT" | species == "BT") %>%
+  select(site, species, treatment, vigilance.rate) %>%
+  pivot_wider(values_from = "vigilance.rate",
+              names_from = c("species", "treatment")) 
+
+urban <- vigilance %>%
+  filter(treatment == "urban noise",
+         species == "CT" | species == "BT") %>%
+  select(site, species, treatment, vigilance.rate) %>%
+  pivot_wider(values_from = "vigilance.rate",
+              names_from = c("species", "treatment")) 
+
+# Run the tests
+#control noise
+t.test(x = control$`CT_control`,
+       y = control$`BT_control`,
+       paired = TRUE)
+
+#urban noise
+t.test(x = urban$`CT_urban noise`,
+       y = urban$`BT_urban noise`,
+       paired = TRUE)
+
+```
+
+
+Answer: 
+
+
+

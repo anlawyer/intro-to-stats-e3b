@@ -1,0 +1,171 @@
+---
+title: "Homework Exercises Week 09"
+author: "Alison Lawyer"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include = TRUE}
+# keep this chunk in all your RMarkdown scripts
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+```
+
+```{r}
+# List required packages
+library(tidyverse)
+library(openxlsx)
+library(car)
+```
+
+
+
+# HOMEWORK EXERCISES
+
+
+## Exercise 3
+
+In this exercise, you will use the dataset "visit_and_peck_rates.xlsx" from the same study to conduct ANOVAs for both visitation and peck rates, verify assumptions, visualize your data, and interpret your results. 
+
+
+### Part 1
+
+Import the dataset.
+Create summary tables of visit and peck rates (you can create one table each or both together) with mean, median, standard error, 95% confidence interval, and sample size. 
+
+```{r}
+visit_peck <- read.xlsx("visit_and_peck_rates.xlsx")
+colnames(visit_peck) <- sub(pattern = "\\.\\((.*?)\\)", replacement = '', colnames(visit_peck))
+
+summary <- visit_peck %>%
+  group_by(species, treatment) %>%
+  summarize(mean_vr = mean(visit.rate),
+            sd_vr = sd(visit.rate),
+            median_vigilance = median(visit.rate),
+            se_vr = sd_vr/sqrt(n()),
+            CI_low_vr = mean_vr - 1.96*se_vr,
+            CI_high_vr = mean_vr + 1.96*se_vr,
+            mean_pr = mean(peck.rate),
+            sd_pr = sd(peck.rate),
+            median_pr = median(peck.rate),
+            se_pr = sd_pr/sqrt(n()),
+            CI_low_pr = mean_pr - 1.96*se_pr,
+            CI_high_pr = mean_pr + 1.96*se_pr
+  )
+summary
+```
+
+
+### Part 2
+
+Visualize your data. For each variable, create a plot showing the mean +- 95% CI by species. 
+Be sure to create appropriate labels, legends, and error bars. 
+
+```{r}
+summary  %>%
+  ggplot(aes(x = species, y = mean_vr, fill = treatment)) +
+  geom_col(position = position_dodge(width = 0.9)) +
+  geom_errorbar(aes(ymin = CI_low_vr, ymax = CI_high_vr), 
+                width = 0.3, color = "black", 
+                position = position_dodge(width = 0.9)) + 
+  labs(title = "Mean visit rates for each species and noise condition",
+       x = "Species",
+       y = "Mean visit rates") +
+  theme_minimal()
+
+summary  %>%
+  ggplot(aes(x = species, y = mean_pr, fill = treatment)) +
+  geom_col(position = position_dodge(width = 0.9)) +
+  geom_errorbar(aes(ymin = CI_low_pr, ymax = CI_high_pr), 
+                width = 0.3, color = "black", 
+                position = position_dodge(width = 0.9)) + 
+  labs(title = "Mean peck rates for each species and noise condition",
+       x = "Species",
+       y = "Mean peck rates") +
+  theme_minimal()
+```
+
+
+### Part 3
+
+Conduct a two-way ANOVA for each variable to assess variation in mean visit and peck rates by species and condition. 
+Print your summary ANOVA output.
+Interpret the output. 
+
+```{r}
+two_way_vr <- aov(visit.rate ~ species * treatment, data = visit_peck)
+two_way_pr <- aov(peck.rate ~ species * treatment, data = visit_peck)
+
+summary(two_way_vr)
+## The mean visit rate is very significantly different across species (F5,358 = 17.6, p < 0.05), but 
+## not significantly different across treatment types (F1,358 = 3.4, p = 0.06), and
+## not significantly different when you consider species and treatment types together 
+## (F5,358 = 0.15, p = 0.97). 
+
+summary(two_way_pr)
+## The mean peck rate is very significantly different across species (F5,358 = 8.3, p < 0.05) and
+## fairly significantly different across treatment types(F1,358 = 5.8, p = 0.01), 
+## but not significant when you consider species and treatment types together (F5,358 = 1.1, p = 0.36). 
+```
+
+
+### Part 4
+
+Verify that assumptions are met for ANOVA for both variables. 
+Use appropriate techniques to assess normal distribution and homogeneity of variances. Describe what you see. 
+
+```{r}
+## First assumption: independent sampling of data. We can assume this is met. 
+
+## Second assumption: normal distribution of residuals
+plot(two_way_vr, 2)
+plot(two_way_pr, 2)
+## The residuals for each test are distributed roughly normally, except for the outliers on the far right end
+## of the graphs.
+
+## Third assumption: equal variance of residuals
+leveneTest(visit.rate ~ species * treatment, data = visit_peck)
+plot(two_way_vr, 3)
+plot(two_way_vr, 1)
+leveneTest(peck.rate ~ species * treatment, data = visit_peck)
+plot(two_way_pr, 3)
+plot(two_way_pr, 1)
+## The third assumption is not met for both tests. The graphs and results from Levene's test demonstrate
+## that there is a significant difference in the variances. 
+```
+
+
+### Part 5
+
+Conduct post-hoc analyses if needed to identify the location of any significant differences. 
+Summarize the result of your post-hoc analyses. 
+
+```{r}
+TukeyHSD(two_way_vr)
+## The species with the largest significant differences in visit rate are:
+## CT-CH 
+## GT-CH
+## R.-CT
+## R.-GT
+## There isn't a high significant difference between treatment types. 
+## Comparing visit rate by species and treatment types, the most significant differences lie in:
+## R.:control-GT:control
+## R.:urban noise-GT:control
+## R.:urban noise-GT:urban noise
+
+TukeyHSD(two_way_pr)
+## The species with the largest significant differences in visit rate are:
+## R.-BT 
+## R.-GT
+## R.-NH
+## There is a higher significant difference between treatment types for peck rate than visit rate.
+## Comparing visit rate by species and treatment types, the most significant differences lie in:
+## R.:urban noise-NH:control
+## R.:urban noise-BT:control
+## R.:urban noise-NH:control
+
+## These results suggest that treatment type has a higher significance for peck rate than visit rate, 
+## while species is the main influencing factor on visit rate. 
+```
+
+

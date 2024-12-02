@@ -1,0 +1,173 @@
+---
+title: "Lab Exercises Week 09"
+author: "Alison Lawyer"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include = TRUE}
+# keep this chunk in all your RMarkdown scripts
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+```
+
+```{r}
+# List required packages
+library(tidyverse)
+library(openxlsx)
+
+```
+
+
+
+
+
+# LAB EXERCISES
+
+For this week's lab you will re-use the vigilance dataset available in the "vigilance.xlsx" file. As a reminder, this file contains data on vigilant behavior of several European song bird species (expressed as a rater per hour). The study aimed to address the question of whether birds show higher vigilance behavior in urban areas with more noise, which could make it more difficult to use auditory cues for avoiding predators. For each species, data were collected at several sites (cities), each having an "urban noise" and "control" condition. You will re-analyze this data using ANOVA. 
+
+
+
+## Exercise 1
+
+Your first objective is to assess species differences in vigilance behavior in the control condition, using all species together in your analyses instead of one pair of species at a time as you did in the last lab. 
+
+
+### Part 1. Exploratory analyses and visualizations
+
+Filter the dataset to records from the control condition only. 
+Create a summary table that contains all species and their means, medians, standard error of the mean, and sample size. 
+Plot the means by species for all species (species on x-axis) using 95% CI for error bars. 
+
+```{r}
+vigilance <- read.xlsx("vigilance.xlsx")
+colnames(vigilance) <- sub(pattern = "\\.\\((.*?)\\)", replacement = '', colnames(vigilance))
+# Filter the dataset to the control condition only
+control <- vigilance %>%
+  filter(treatment == "control")
+
+# Plot the mean rates per species along with 95% confidence intervals
+control %>%
+  group_by(species) %>%
+  summarize(mean_vigilance = mean(vigilance.rate),
+            sd_vigilance = sd(vigilance.rate),
+            median_vigilance = median(vigilance.rate),
+            iqr = IQR(vigilance.rate),
+            var = var(vigilance.rate),
+            se = sd_vigilance/sqrt(n()),
+            CI_low = mean_vigilance - 1.96*se,
+            CI_high = mean_vigilance + 1.96*se
+  ) %>%
+  ggplot(aes(x = species, y = mean_vigilance, fill = species)) +
+  geom_col(show.legend = FALSE) +
+  geom_errorbar(aes(ymin = CI_low, ymax = CI_high), width = 0.3, color = "black")
+
+
+# Make the plot
+
+
+```
+
+
+
+### Part 2. Conduct an anova test
+
+Create a one-way ANOVA of vigilance rate by species
+Print the summary
+Interpret the result. 
+
+```{r}
+vig_aov <- aov(vigilance.rate ~ species, data = control)
+vig_aov
+summary(vig_aov)
+```
+
+
+
+### Part 3. Verify that assumptions are met
+
+Verify the assumption of homogeneity of variances and normal distribution. 
+Interpret your findings. Is the ANOVA result valid? 
+
+```{r}
+vig_aov %>% plot()
+
+
+```
+
+
+
+
+
+### Part 4. Conduct post-hoc analyses
+
+Regardless of the answer to the validity question in part 3, conduct a Tukey HSD post-hoc to assess the pairwise differences in vigilance rates between species. Which species differ significantly from each other? 
+
+```{r}
+TukeyHSD(vig_aov)
+
+```
+
+
+
+
+
+## Exercise 2
+
+In this exercise you will conduct a two-way ANOVA and interpret its findings. 
+
+
+### Part 1. 
+
+Expand your summary table from above to include the noise condition
+Create a new figure showing the mean and 95% confidence interval of vigilance rates for control and noise condition for each species.
+Interpret the plot.
+
+```{r}
+vigilance %>%
+  group_by(species, treatment) %>%
+  summarize(mean_vigilance = mean(vigilance.rate),
+            sd_vigilance = sd(vigilance.rate),
+            median_vigilance = median(vigilance.rate),
+            iqr = IQR(vigilance.rate),
+            var = var(vigilance.rate),
+            se = sd_vigilance/sqrt(n()),
+            CI_low = mean_vigilance - 1.96*se,
+            CI_high = mean_vigilance + 1.96*se
+  ) %>%
+  ggplot(aes(x = species, y = mean_vigilance, fill = treatment)) +
+  geom_col(show.legend = FALSE) +
+  geom_errorbar(aes(ymin = CI_low, ymax = CI_high), width = 0.3, color = "black") +
+  facet_wrap(~treatment)
+
+
+```
+
+
+
+### Part 2. Conduct the two-way ANOVA
+
+Conduct the two-way ANOVA using both species and condition as your predictor variables. Interpret the result. 
+If your ANOVA shows significant differences in mean vigilance rates or a significant interaction, conduct a post-hoc test to identify where the differences are located.
+
+```{r}
+two_way_vig <- aov(vigilance.rate ~ species * treatment, data = vigilance)
+two_way_vig
+summary(two_way_vig)
+```
+
+
+
+### Part 3. Verify assumptions
+
+Verify the assumption of homogeneity of variances and normal distribution. 
+Interpret your findings. Is the ANOVA result valid? 
+
+```{r}
+two_way_vig %>% plot()
+
+
+```
+
+
+
