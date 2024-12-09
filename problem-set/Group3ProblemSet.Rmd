@@ -1,0 +1,354 @@
+---
+title: "Problem set, group 3"
+author: "Alison, Dylan, and Laura"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include = TRUE}
+# keep this chunk in all your RMarkdown scripts
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+```
+
+```{r}
+# List required packages
+library(tidyverse)
+library(openxlsx)
+library(ppcor)
+library(table1)
+library(lmtest)
+library(janitor)
+library(dplyr)
+```
+
+```{r}
+# Initial data loading
+mammals_sleep <- read.xlsx("mammals_sleep.xlsx")
+
+# Cleaning column names
+colnames(mammals_sleep) <- sub(pattern = "\\.\\((.*?)\\)", replacement = '', colnames(mammals_sleep))
+colnames(mammals_sleep) <- sub(pattern = "\\((.*?)\\)", replacement = '', colnames(mammals_sleep))
+mammals_sleep <- clean_names(mammals_sleep)
+
+# Update cells with missing data to NA
+mammals_sleep[mammals_sleep == -999] <- NA
+
+# Rename columns
+mammals_sleep <- mammals_sleep %>%
+  rename(SWS = `slow_wave_sleep`, 
+         PS = `paradoxical_sleep`)
+
+# Calculate proportion of dreaming sleep - for analysis 1
+mammals_sleep$dream_sleep_ratio <- (mammals_sleep$PS / mammals_sleep$total_sleep) * 100
+
+# Add predator_status column - for analysis 2
+mammals_sleep <- mammals_sleep  %>%
+  mutate(predator_status = ifelse(sleep_exposure_index <= 2, "Low Exposure", "High Exposure"))
+
+# Transform type into factor - for analysis 3
+mammals_sleep <- mammals_sleep %>%
+  mutate(predation_index = as.factor(predation_index))
+
+# Add weight_group column - for analysis 4
+mammals_sleep <- mammals_sleep %>% 
+  mutate(weight_group = cut(body_weight, 
+                        breaks=c(0, 0.9, 9, 99, 1999, Inf),
+                        labels=c("lightest", "light", "midweight", "heavy", "heaviest")))
+
+```
+
+```{r}
+## Analysis 1
+
+# Filter data to only include needed columns
+filtered_mammals_a1 <- mammals_sleep[, c("brain_weight_body_weight_percent", "dream_sleep_ratio")]
+
+# Remove rows with invalid or missing values
+filtered_mammals_a1 <- na.omit(filtered_mammals_a1)
+
+# Summary Statistics
+table1(data = filtered_mammals_a1,
+       ~ brain_weight_body_weight_percent +
+         dream_sleep_ratio,
+       topclass = "Rtable1-zebra",
+       rowlabelhead = "Variables")
+
+# Perform linear regression
+model <- lm(dream_sleep_ratio ~ brain_weight_body_weight_percent, data = filtered_mammals_a1)
+
+# Summary of the model
+summary(model)
+
+# Plot the relationship
+ggplot(filtered_mammals_a1, aes(x = brain_weight_body_weight_percent, y = dream_sleep_ratio)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "blue") +
+  labs(title = "Relationship between Brain Size and Dreaming Sleep Ratio",
+       x = "Brain Size (%)",
+       y = "Dreaming Sleep Ratio (%) ") +
+  theme_minimal()
+
+# Non-linear
+filtered_non_linear <- filtered_mammals_a1 %>%
+  mutate(brain_size_sq = brain_weight_body_weight_percent^2)
+
+nonlinear_model <- lm(dream_sleep_ratio ~ brain_weight_body_weight_percent + brain_size_sq, 
+                      data = filtered_non_linear)
+summary(nonlinear_model)
+
+# Plot quadratic relationship
+ggplot(filtered_non_linear, aes(x = brain_size_sq, y = dream_sleep_ratio)) +
+  geom_point() +
+  geom_smooth(method = "lm", formula = y ~ x + I(x^2), color = "red") +
+  labs(title = "Non-linear Relationship between Brain Size and Dreaming Sleep Ratio",
+       x = "Brain Size Squared (%)",
+       y = "Dreaming Sleep Ratio (%)") +
+  theme_minimal()
+
+```
+
+```{r}
+## Analysis 2
+
+grouped_data_a2 <- mammals_sleep %>%
+  dplyr::select(brain_weight_body_weight_percent, PS, total_sleep, predator_status) %>%
+  filter(!is.na(brain_weight_body_weight_percent) & !is.na(PS) & !is.na(total_sleep) & !is.na(predator_status)) %>%
+  mutate(dream_sleep_ratio = (PS / total_sleep) * 100)
+
+# summary stats
+table1(data = grouped_data_a2,
+       ~ brain_weight_body_weight_percent +
+         dream_sleep_ratio | predator_status,
+       topclass = "Rtable1-zebra",
+       rowlabelhead = "Variables")
+
+# Boxplot of predator status vs. dreaming sleep ratio
+ggplot(grouped_data_a2, aes(x = predator_status, y = dream_sleep_ratio, fill = predator_status)) +
+  geom_boxplot() +
+  labs(title = "Dreaming Sleep Ratio by Predator Status",
+       x = "Predator Status",
+       y = "Dreaming Sleep Ratio (%)") +
+  theme_minimal()
+
+# Test group differences (e.g., t-test)
+t_test_predator_status <- t.test(dream_sleep_ratio ~ predator_status, data = grouped_data_a2)
+t_test_predator_status
+```
+
+```{r}
+## Analysis 3
+
+# Reformat data to longer pivot with selected columns
+select_predation_pivot <- mammals_sleep %>%
+  dplyr::select(species, predation_index, SWS, PS, total_sleep) %>%
+  pivot_longer(cols = c(SWS, PS,  total_sleep), names_to = "sleep_pattern", values_to = "sleep_time")
+
+# Summary of central tendency, variables, confidence intervals
+summary_total_sleep <- mammals_sleep %>%
+  drop_na(total_sleep) %>%
+  group_by(predation_index) %>%
+  summarise(mean_sleep = mean(total_sleep), sd = sd(total_sleep), median = median(total_sleep), number = n(), 
+            low_CI = mean(total_sleep)- 1.96*sd(total_sleep)/sqrt(n()), 
+            high_CI = mean(total_sleep)+ 1.96*sd(total_sleep)/sqrt(n()))
+
+table1(data = mammals_sleep,
+       ~ total_sleep |
+         predation_index ,
+       topclass = "Rtable1-zebra",
+       rowlabelhead = "Variables")
+
+# Scatter plot of sleep time and index
+select_predation_pivot %>%
+  drop_na(sleep_time) %>%
+  group_by(predation_index) %>%
+  filter(sleep_pattern == "total_sleep") %>%
+  ggplot(aes(x= predation_index, y = sleep_time)) +
+  geom_point() +
+  labs(title = "Total sleep by index") +
+  theme_minimal()
+
+# Bar graph of average sleep duration by predation index
+summary_total_sleep %>%
+  ggplot(aes(x= predation_index, y = mean_sleep)) +
+  geom_bar(stat = "identity", fill = "orange") +
+  geom_errorbar(aes(ymin =low_CI, ymax = high_CI), size = 0.2) +
+  labs(title = "Bar graph of average total sleep in hours/day", x = "predation index",y = "mean sleep" ) +
+  theme(plot.title = element_text(size =10),  plot.caption = element_text(size = 10)) +
+  theme_minimal()
+
+# Boxplot of sleep duration for each predation index
+mammals_sleep %>%
+  drop_na(total_sleep) %>%
+  ggplot(aes(x= factor(predation_index), y = total_sleep)) +
+  geom_boxplot(, color = "orange", fill = "pink") +
+  labs(title = "Boxplot of total sleep time by predation index", x= "predation index", 
+       y = "total sleep", caption = "Figure 2: Boxplot of total sleep time in hours per day 
+       of mammals for each predation levels") +
+  theme(plot.title = element_text(size = 10),  plot.caption = element_text(size = 10, hjust = 0.5)) +
+  theme_minimal()
+
+# Linear regression between index level and total sleep 
+lm_totalsleep <- mammals_sleep %>%
+  drop_na(total_sleep) %>%
+  lm(total_sleep ~ predation_index, data = .)
+summary(lm_totalsleep)
+
+# Linear regression graph with confidence interval
+ggplot(mammals_sleep, aes(x = as.numeric(predation_index), y = total_sleep)) +
+  geom_point(color = "dark orange") +
+  theme_minimal() +
+  geom_smooth(method = "lm", se = TRUE, color = "red") +
+  labs(title = "Regression line for predation and total sleep",
+       x = "Predation Index",
+       y = "Total Sleep") +
+  theme(plot.title = element_text(size = 9)) +
+  theme_minimal()
+
+# Check assumptions for residuals normal distribution
+plot(lm_totalsleep, which = 2)
+
+# Confidence interval for slope
+confint(lm_totalsleep)
+
+# Assess linearity with LOESS
+ggplot(mammals_sleep, aes(x = as.numeric(predation_index), y = total_sleep)) +
+  geom_point(color = "blue") +
+  geom_smooth(method = "loess", se = TRUE, color = "red") +
+  labs(title = "LOESS for predation index and total sleep",
+       x = "Predation Index",
+       y = "Total Sleep") +
+  theme(plot.title = element_text(size = 9)) +
+  theme_minimal()
+
+# independence of residuals, Durbin-Watson test
+dwtest(lm_totalsleep)
+```
+
+```{r}
+## Analysis 4
+
+# Summary table for mean graphs
+summary_table_weight <- mammals_sleep %>%
+  group_by(weight_group) %>%
+  summarize(total = n(),
+            mean_gest = mean(gestation_time, na.rm = TRUE),
+            sd_gest = sd(gestation_time, na.rm = TRUE),
+            se_gest = sd_gest/sqrt(n()),
+            CI_low_gest = mean_gest - 1.96*se_gest,
+            CI_high_gest = mean_gest + 1.96*se_gest,
+            mean_sleep = mean(total_sleep, na.rm = TRUE),
+            sd_sleep = sd(total_sleep, na.rm = TRUE),
+            se_sleep = sd_sleep/sqrt(n()),
+            CI_low_sleep = mean_sleep - 1.96*se_sleep,
+            CI_high_sleep = mean_sleep + 1.96*se_sleep
+  )
+summary_table_weight
+
+# Descriptive statistics table
+table1(data = mammals_sleep,
+       ~ gestation_time +
+         body_weight + 
+         total_sleep | weight_group,
+       topclass = "Rtable1-zebra",
+       rowlabelhead = "Variables")
+
+# Bar chart showing mean gestation time by weight group
+summary_table_weight %>% 
+  ggplot(aes(x = weight_group, y = mean_gest, fill = weight_group)) +
+  geom_col(show.legend = FALSE) +
+  geom_errorbar(aes(ymin = CI_low_gest, ymax = CI_high_gest), width = 0.3, color = "black") +
+  labs(title = "Mean gestation time by mammal weight group",
+       x = "Weight group",
+       y = "Mean gestation time",
+       caption = "Bar graph demonstrating that gestation time increases as mammal body weight increases") +
+  theme_minimal()
+
+# Bar chart showing mean sleep time by weight group
+summary_table_weight %>% 
+  ggplot(aes(x = weight_group, y = mean_sleep, fill = weight_group)) +
+  geom_col(show.legend = FALSE) +
+  geom_errorbar(aes(ymin = CI_low_sleep, ymax = CI_high_sleep), width = 0.3, color = "black") +
+  labs(title = "Mean sleep time by mammal weight group",
+       x = "Weight group",
+       y = "Mean sleep time",
+       caption = "Bar graph demonstrating that sleep time decreases as mammal body weight increases") +
+  theme_minimal()
+
+# Line graph correlation between sleep time and gestation time
+na.omit(mammals_sleep) %>% 
+  ggplot(aes(x = total_sleep, y = gestation_time)) +
+  geom_point() +
+  geom_smooth(aes(color = "linear"), se = FALSE, method = "lm", show.legend = FALSE) +
+  geom_smooth(aes(color = "loess"), se = FALSE, span = 0.9, show.legend = FALSE) +
+  labs(title = "Comparing total sleep time to gestation time in mammals",
+       x = "Total sleep time (hr/day)",
+       y = "Gestation time (days)",
+       caption = "Figure 8.1: Scatter plot demonstrating relationship between sleep time and gestation time") +
+  theme_minimal()
+
+# Line graph correlation between sleep time and body weight
+na.omit(mammals_sleep) %>% 
+  ggplot(aes(x = total_sleep, y = body_weight)) +
+  geom_point() +
+  geom_smooth(aes(color = "linear"), se = FALSE, method = "lm", show.legend = FALSE) +
+  geom_smooth(aes(color = "loess"), se = FALSE, span = 0.9, show.legend = FALSE) +
+  labs(title = "Comparing total sleep time to body weight in mammals",
+       x = "Total sleep time (hr/day)",
+       y = "Body weight (kg)",
+       caption = "Figure 8.2: Scatter plot demonstrating relationship between sleep time and body weight") +
+  theme_minimal()
+
+# Testing for normality
+# qq plot of gestation time data
+ggplot(na.omit(mammals_sleep), aes(sample = gestation_time)) +
+  stat_qq(show.legend = FALSE) +
+  geom_abline(aes(intercept = mean(x = gestation_time), 
+                  slope = sd(x = gestation_time))) +
+  labs(title = "QQ plot of gestation time data",
+       caption = "Figure 7.1") +
+  theme_minimal()
+
+# qq plot of body weight data
+ggplot(na.omit(mammals_sleep), aes(sample = body_weight)) +
+  stat_qq(show.legend = FALSE) +
+  geom_abline(aes(intercept = mean(x = gestation_time), 
+                  slope = sd(x = gestation_time))) +
+  labs(title = "QQ plot of body weight data",
+       caption = "Figure 7.2") +
+  theme_minimal()
+
+# qq plot of sleep time data
+ggplot(na.omit(mammals_sleep), aes(sample = total_sleep)) +
+  stat_qq(show.legend = FALSE) +
+  geom_abline(aes(intercept = mean(x = total_sleep), 
+                  slope = sd(x = total_sleep))) +
+  labs(title = "QQ plot of sleep time data",
+       caption = "Figure 7.3") +
+  theme_minimal()
+
+# Testing for homoscedasticity
+bptest(formula = total_sleep ~ gestation_time,
+       data = mammals_sleep) #result is not significant, so homoscedastic
+
+bptest(formula = total_sleep ~ body_weight,
+       data = mammals_sleep) #result is not significant, so homoscedastic
+
+# Spearman's correlation because gestation data is not normally distributed
+cor.test(x = na.omit(mammals_sleep)$total_sleep,
+         y = na.omit(mammals_sleep)$gestation_time,
+         method = "spearman",
+         exact = FALSE)
+
+# Spearman's correlation because body weight data is not normally distributed
+cor.test(x = na.omit(mammals_sleep)$total_sleep,
+         y = na.omit(mammals_sleep)$body_weight,
+         method = "spearman",
+         exact = FALSE)
+
+mammals_sub <- na.omit(mammals_sleep) %>%
+  dplyr::select(body_weight, total_sleep, gestation_time)
+
+# Partial correlation with Spearman
+pcor(x = mammals_sub, method = "spearman")
+```
